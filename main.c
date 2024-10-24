@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "term.h"
 #include "util.h"
 #include "viewport.h"
@@ -23,6 +24,70 @@ bool in_mandelbrot_set(struct complex c) {
     return true;
 }
 
+#define CELL_TOPLEFT (1 << 0)
+#define CELL_TOPRIGHT (1 << 1)
+#define CELL_BOTTOMLEFT (1 << 2)
+#define CELL_BOTTOMRIGHT (1 << 3)
+
+void draw_cell_march(double left, double top, double x_step, double y_step, int index) {
+    char sym, cell_state = 0000;
+    double cx, cy;
+    int y, x;
+
+    cy = top;
+    for (y = 0; y < 2; ++y) {
+        cx = left;
+        for (x = 0; x < 2; ++x) {
+            struct complex c = { .real = cx, .imag = cy };
+            if (in_mandelbrot_set(c)) {
+                cell_state |= (1 << (y * 2 + x));
+            }
+            cx += x_step / 2;
+        }
+        cy += y_step / 2;
+    }
+
+    
+    switch (cell_state)  {
+        case 0:
+            sym = ' ';
+        break;
+        case CELL_BOTTOMLEFT:
+        case CELL_BOTTOMRIGHT:
+        case CELL_BOTTOMLEFT | CELL_BOTTOMRIGHT:
+            sym = '.';
+        break;
+        case CELL_TOPLEFT:
+        case CELL_TOPRIGHT:
+        case CELL_TOPLEFT | CELL_TOPRIGHT:
+            sym = '^';
+        break;
+        case CELL_TOPLEFT | CELL_BOTTOMLEFT:
+            sym = '[';
+        break;
+        case CELL_TOPRIGHT | CELL_BOTTOMRIGHT:
+            sym = ']';
+        break;
+        case CELL_TOPRIGHT | CELL_TOPLEFT | CELL_BOTTOMLEFT:
+            sym = '7';
+        break;
+        case CELL_TOPRIGHT | CELL_TOPLEFT | CELL_BOTTOMRIGHT:
+            sym = 'F';
+        break;
+        case CELL_BOTTOMRIGHT | CELL_TOPLEFT | CELL_BOTTOMLEFT:
+            sym = 'L';
+        break;
+        case CELL_TOPRIGHT | CELL_BOTTOMLEFT | CELL_BOTTOMRIGHT:
+            sym = 'J';
+        break;
+        case CELL_TOPRIGHT | CELL_TOPLEFT | CELL_BOTTOMRIGHT | CELL_BOTTOMLEFT:
+            sym = '#';
+        break;
+    }
+
+    screen_buffer[index] = sym;
+}
+
 void draw_cell(double x, double y, int index) {
     struct complex c = { .real = x, .imag = y };
     char sym = ' ';
@@ -40,7 +105,13 @@ void draw_mandelbrot(struct viewport *vp) {
 
     for (row = 0, y = top; row < vp->rows; ++row, y -= vp->cell_size.y) {
         for (col = 0, x = left; col < vp->cols; ++col, x += vp->cell_size.x) {
+            #ifdef USE_MARCHING_DRAW
+            draw_cell_march(x, y,
+                            vp->cell_size.x, vp->cell_size.y,
+                            row * vp->cols + col);
+            #else
             draw_cell(x, y, row * vp->cols + col);
+            #endif
         }
     }
     move_cursor(1, 1);

@@ -20,6 +20,14 @@ struct viewport vp_init(struct vec2 center, struct vec2 extents) {
         .center = center,
         .extents = extents,
     };
+
+    /* Edit the extents of the viewport to force the correct aspect ratio */
+    double height = vp.extents.y * 2;
+    /* Each cell is 2.5 times taller than it is wide */
+    double height_ratio = height / vp.rows / 2.5;
+    double width = vp.cols * height_ratio;
+    vp.extents.x = width / 2;
+    
     vp_update_cellsize(&vp);
     return vp;
 }
