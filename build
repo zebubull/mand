@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+set -e
+gcc -o main main.c term.c viewport.c -lm
