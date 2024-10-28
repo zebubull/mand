@@ -6,7 +6,7 @@
 static struct winsize get_target_size() {
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    if (w.ws_row % 2 == 1) {
+    if (w.ws_row % 2 == 0) {
         w.ws_row -= 1;
     }
     return w;

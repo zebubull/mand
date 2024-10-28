@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
 
 set -e
-gcc -o main main.c term.c viewport.c -lm -O3
+if [[ $1 == "MARCH" ]]; then
+  gcc -o main main.c term.c viewport.c -lm -O3 -DMARCHING
+else
+  gcc -o main main.c term.c viewport.c -lm -O3
+fi
